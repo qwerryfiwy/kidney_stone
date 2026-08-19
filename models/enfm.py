@@ -19,6 +19,7 @@ from models.fpn import TopDownFPN
 from models.attention_gate import AttentionGatedBottomUp
 from models.pooling import build_pooling
 from models.classifier import ClassificationHead
+from models.baselines import build_baseline, BASELINE_TIMM_NAMES
 
 
 class EfficientNetFPN(nn.Module):
@@ -114,3 +115,34 @@ def build_enfm(
         dropout_fc2=dropout_fc2,
         **variant_cfg[variant],
     )
+
+
+def build_model(
+    name: str,
+    pyramid_channels: int = 256,
+    num_classes: int = 2,
+    pretrained: bool = True,
+    dropout_fc1: float = 0.3,
+    dropout_fc2: float = 0.2,
+) -> nn.Module:
+    """Builds either an ENFM variant or a baseline model based on its name."""
+    if name in ["enfm", "fpn_avg", "fpn_dual", "fpn_gmp"]:
+        return build_enfm(
+            variant=name,
+            pyramid_channels=pyramid_channels,
+            num_classes=num_classes,
+            pretrained=pretrained,
+            dropout_fc1=dropout_fc1,
+            dropout_fc2=dropout_fc2,
+        )
+    elif name in BASELINE_TIMM_NAMES:
+        return build_baseline(
+            name=name,
+            num_classes=num_classes,
+            pretrained=pretrained,
+        )
+    else:
+        raise ValueError(
+            f"Unknown model name '{name}'. "
+            f"Choices: {['enfm', 'fpn_avg', 'fpn_dual', 'fpn_gmp'] + list(BASELINE_TIMM_NAMES)}"
+        )
